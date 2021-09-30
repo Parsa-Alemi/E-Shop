@@ -10,7 +10,15 @@ router.get(`/`, async (req, res) => {
   }
   res.send(categoryList);
 });
-
+router.get("/:id", async (req, res) => {
+  const category = await Category.findById(req.params.id);
+  if (!category) {
+    res.status(500).json({
+      success: false,
+    });
+  }
+  res.status(200).send(category);
+});
 router.post("/", async (req, res) => {
   let newCategory = new Category();
   newCategory.name = req.body.name;
@@ -24,4 +32,35 @@ router.post("/", async (req, res) => {
     res.send({ success: true });
   }
 });
+router.delete("/:id", (req, res) => {
+  Category.findByIdAndRemove(req.params.id)
+    .then((catfind) => {
+      if (catfind) {
+        res.send({ success: true });
+      } else {
+        res.status(500).json({ success: false });
+      }
+    })
+    .catch((err) => res.status(400).json({ success: false, err: err }));
+});
+
+router.put("/:id", async (req, res) => {
+  const category = await Category.findByIdAndUpdate(
+    req.params.id,
+    {
+      name: req.body.name,
+      icon: req.body.icon,
+      color: req.body.color,
+      image: req.body.image,
+    },
+    { new: true }
+  );
+
+  if (!category) {
+    res.status(500).json({ success: false });
+  }
+
+  res.status(200).send(category);
+});
+
 module.exports = router;
