@@ -16,7 +16,7 @@ async function sign(req, res, email) {
 
         user.token = token;
         user = user.save();
-        res.send({ success: true });
+        res.send({ success: true, token: token });
       }
     })
     .catch((err) => res.send({ err }));

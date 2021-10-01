@@ -5,8 +5,13 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 require("dotenv/config");
 const sign = require("../auth/sign");
+const auth = require("../auth/auth");
 
 router.get("/:id", async (req, res) => {
+  const authResult = await auth(req, res, true);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   const user = await User.findById(req.params.id).select("-passwordHash");
   if (!user) {
     res.status(500).json({
@@ -17,6 +22,10 @@ router.get("/:id", async (req, res) => {
 });
 
 router.get(`/`, async (req, res) => {
+  const authResult = await auth(req, res, true);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   const userList = await User.find().select("-passwordHash");
 
   if (!userList) {
@@ -25,6 +34,10 @@ router.get(`/`, async (req, res) => {
   res.send(userList);
 });
 router.post("/", async (req, res) => {
+  const authResult = await auth(req, res, true);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   let newUser = new User();
   newUser.name = req.body.name;
   newUser.email = req.body.email;
@@ -65,7 +78,11 @@ router.post("/login", async (req, res) => {
     })
     .catch((err) => res.status(500).json({ success: false, err: err }));
 });
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
+  const authResult = await auth(req, res, true);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   User.findByIdAndRemove(req.params.id)
     .then((user) => {
       if (user) {

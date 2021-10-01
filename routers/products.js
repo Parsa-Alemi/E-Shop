@@ -7,6 +7,10 @@ const sign = require("../auth/sign");
 const auth = require("../auth/auth");
 
 async function showProducts(req, res) {
+  const authResult = await auth(req, res, false);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   const objtest = await productsModel.find().populate("category");
   if (!objtest) {
     res.status(500).json({ success: false });
@@ -15,7 +19,10 @@ async function showProducts(req, res) {
   }
 }
 async function addProducts(req, res) {
-  //console.log(auth(req, res));
+  const authResult = await auth(req, res, true);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   let category = await Category.findById(req.body.category)
     .then(async (category) => {
       let newProduct = new productsModel();
@@ -45,6 +52,10 @@ async function addProducts(req, res) {
 router.get("/", async (req, res) => showProducts(req, res));
 router.post("/", async (req, res) => addProducts(req, res));
 router.get("/:id", async (req, res) => {
+  const authResult = await auth(req, res, false);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   const product = await productsModel
     .findById(req.params.id)
     .populate("category");
@@ -57,6 +68,10 @@ router.get("/:id", async (req, res) => {
 });
 
 router.put("/:id", async (req, res) => {
+  const authResult = await auth(req, res, true);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   if (!mongoose.isValidObjectId(req.params.id)) {
     return res.status(400).send("Invalid Id");
   }
@@ -94,7 +109,11 @@ router.put("/:id", async (req, res) => {
 
   res.send(product);
 });
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
+  const authResult = await auth(req, res, true);
+  if (!authResult)
+    return res.status(500).json({ success: false, err: "auth err" });
+
   productsModel
     .findByIdAndRemove(req.params.id)
     .then((product) => {
