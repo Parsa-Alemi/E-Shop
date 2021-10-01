@@ -37,6 +37,11 @@ const userScheme = mongoose.Schema({
     type: String,
     default: "",
   },
+  token: {
+    type: String,
+    expires: 36000,
+    default: "",
+  },
   country: {
     type: String,
     default: "",

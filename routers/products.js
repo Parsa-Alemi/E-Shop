@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const { Category } = require("../models/categories.js");
 const { productsModel } = require("../models/product.js");
 const router = express.Router();
+const sign = require("../auth/sign");
+const auth = require("../auth/auth");
 
 async function showProducts(req, res) {
   const objtest = await productsModel.find().populate("category");
@@ -13,6 +15,7 @@ async function showProducts(req, res) {
   }
 }
 async function addProducts(req, res) {
+  //console.log(auth(req, res));
   let category = await Category.findById(req.body.category)
     .then(async (category) => {
       let newProduct = new productsModel();
@@ -36,9 +39,7 @@ async function addProducts(req, res) {
         }
       });
     })
-    .catch((err) =>
-      res.status(500).json({ success: false, err: "invalid category" })
-    );
+    .catch((err) => res.status(500).json({ success: false, err: err }));
 }
 //API routes
 router.get("/", async (req, res) => showProducts(req, res));

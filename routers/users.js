@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
 require("dotenv/config");
+const sign = require("../auth/sign");
 
 router.get("/:id", async (req, res) => {
   const user = await User.findById(req.params.id).select("-passwordHash");
@@ -56,14 +57,7 @@ router.post("/login", async (req, res) => {
         res.status(500).json({ success: false, err: "user not found" });
       else {
         if (bcrypt.compareSync(req.body.password, user.passwordHash)) {
-          const token = jwt.sign(
-            {
-              userId: user.id,
-            },
-            process.env.SECRET,
-            { expiresIn: "1d" }
-          );
-          res.send({ user: user.email, token: token });
+          sign(req, res, req.body.email);
         } else {
           res.send({ success: false });
         }
