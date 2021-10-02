@@ -1,9 +1,9 @@
-const { User } = require("../models/users");
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
 require("dotenv/config");
+const { User } = require("../models/users");
 const sign = require("../auth/sign");
 const auth = require("../auth/auth");
 
@@ -11,7 +11,6 @@ router.get("/:id", async (req, res) => {
   const authResult = await auth(req, res, true);
   if (!authResult)
     return res.status(500).json({ success: false, err: "auth err" });
-
   const user = await User.findById(req.params.id).select("-passwordHash");
   if (!user) {
     res.status(500).json({
@@ -25,37 +24,28 @@ router.get(`/`, async (req, res) => {
   const authResult = await auth(req, res, true);
   if (!authResult)
     return res.status(500).json({ success: false, err: "auth err" });
-
   const userList = await User.find().select("-passwordHash");
-
   if (!userList) {
     res.status(500).json({ success: false });
   }
   res.send(userList);
 });
+
 router.post("/", async (req, res) => {
   const authResult = await auth(req, res, true);
   if (!authResult)
     return res.status(500).json({ success: false, err: "auth err" });
-
   let newUser = new User();
   newUser.name = req.body.name;
   newUser.email = req.body.email;
   newUser.passwordHash = bcrypt.hashSync(req.body.passwordHash, 10);
   newUser.phone = req.body.phone;
-
   newUser.isAdmin = req.body.isAdmin;
-
   newUser.street = req.body.street;
-
   newUser.apartment = req.body.apartment;
-
   newUser.zip = req.body.zip;
-
   newUser.city = req.body.city;
-
   newUser.country = req.body.country;
-
   newUser = await newUser.save();
   if (!newUser) {
     res.status(500).json({ success: false });
@@ -63,6 +53,7 @@ router.post("/", async (req, res) => {
     res.send({ success: true, newUser });
   }
 });
+
 router.post("/login", async (req, res) => {
   const user = await User.findOne({ email: req.body.email })
     .then((user) => {
@@ -82,7 +73,6 @@ router.delete("/:id", async (req, res) => {
   const authResult = await auth(req, res, true);
   if (!authResult)
     return res.status(500).json({ success: false, err: "auth err" });
-
   User.findByIdAndRemove(req.params.id)
     .then((user) => {
       if (user) {
@@ -104,4 +94,5 @@ router.delete("/:id", async (req, res) => {
       });
     });
 });
+
 module.exports = router;

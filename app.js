@@ -6,7 +6,7 @@ const morgan = require("morgan");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const api = process.env.API_URL;
-console.log(process.env.SECRET);
+
 app.use(cors());
 app.options("*", cors());
 //auth
