@@ -4,7 +4,32 @@ const { Category } = require("../models/categories.js");
 const { productsModel } = require("../models/product.js");
 const sign = require("../auth/sign");
 const auth = require("../auth/auth");
+const multer = require("multer");
+const e = require("express");
 
+const FILE_NAME_TYPE = {
+  "image/png": "png",
+  "image/jpeg": "jpeg",
+  "image/jpg": "jpg",
+};
+
+let storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const isValid = FILE_NAME_TYPE[file.mimetype];
+    let uploadError = new Error("Invalid Type");
+    if (isValid) {
+      uploadError = null;
+    }
+    cb(uploadError, "uploads");
+  },
+  filename: function (req, file, cb) {
+    const fileName = file.originalname.split(" ").join("-");
+    console.log(fileName);
+    const extension = FILE_NAME_TYPE[file.mimetype];
+    cb(null, `${fileName}-${Date.now()}.${extension}`);
+  },
+});
+let upload = multer({ storage: storage });
 const router = express.Router();
 
 async function showProducts(req, res) {
@@ -23,14 +48,16 @@ async function addProducts(req, res) {
   const authResult = await auth(req, res, true);
   if (!authResult)
     return res.status(500).json({ success: false, err: "auth err" });
+  const fileName = req.file.filename;
   let category = await Category.findById(req.body.category)
     .then(async (category) => {
       let newProduct = new productsModel();
       (newProduct.name = req.body.name),
         (newProduct.description = req.body.description),
         (newProduct.richDescription = req.body.richDescription),
-        (newProduct.image = req.body.image),
-        (newProduct.images = req.body.images),
+        (newProduct.image = `${req.protocol}://${req.get(
+          "host"
+        )}/uploads/${fileName}`),
         (newProduct.brand = req.body.brand),
         (newProduct.category = req.body.category),
         (newProduct.rating = req.body.rating),
@@ -51,7 +78,9 @@ async function addProducts(req, res) {
 
 //API routes
 router.get("/", async (req, res) => showProducts(req, res));
-router.post("/", async (req, res) => addProducts(req, res));
+router.post("/", upload.single("image"), async (req, res) =>
+  addProducts(req, res)
+);
 router.get("/:id", async (req, res) => {
   const authResult = await auth(req, res, false);
   if (!authResult)
@@ -67,7 +96,7 @@ router.get("/:id", async (req, res) => {
   res.status(200).send(product);
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", upload.single("image"), async (req, res) => {
   const authResult = await auth(req, res, true);
   if (!authResult)
     return res.status(500).json({ success: false, err: "auth err" });
@@ -82,14 +111,25 @@ router.put("/:id", async (req, res) => {
     .catch((err) => {
       return res.status(400).send("Invalid Category");
     });
-  const product = await productsModel.findByIdAndUpdate(
+  const product = await productsModel.findById(req.params.id);
+  let filePath;
+  if (!product) {
+    return res.status(400).send("Invalid ID");
+  }
+  if (req.file) {
+    const fileName = req.file.filename;
+    filePath = `${req.protocol}://${req.get("host")}/uploads/${fileName}`;
+  } else {
+    filePath = product.image;
+  }
+
+  productUpdate = await productsModel.findByIdAndUpdate(
     req.params.id,
     {
       name: req.body.name,
       description: req.body.description,
       richDescription: req.body.richDescription,
-      image: req.body.image,
-      images: req.body.images,
+      image: filePath,
       brand: req.body.brand,
       category: req.body.category,
       rating: req.body.rating,
@@ -100,10 +140,10 @@ router.put("/:id", async (req, res) => {
     },
     { new: true }
   );
-  if (!product) {
+  if (!productUpdate) {
     return res.status(500).send("The Product not Created");
   }
-  res.send(product);
+  res.send(productUpdate);
 });
 
 router.delete("/:id", async (req, res) => {

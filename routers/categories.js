@@ -34,9 +34,7 @@ router.post("/", async (req, res) => {
     return res.status(500).json({ success: false, err: "auth err" });
   let newCategory = new Category();
   newCategory.name = req.body.name;
-  newCategory.icon = req.body.icon;
   newCategory.color = req.body.color;
-  newCategory.image = req.body.image;
   newCategory = await newCategory.save();
   if (!newCategory) {
     res.status(500).json({ success: false });
@@ -68,9 +66,7 @@ router.put("/:id", async (req, res) => {
     req.params.id,
     {
       name: req.body.name,
-      icon: req.body.icon,
       color: req.body.color,
-      image: req.body.image,
     },
     { new: true }
   );
